@@ -12,8 +12,8 @@ type Task struct {
 }
 
 type TaskRequest struct {
-	Task   string `json:"task"`
-	IsDone bool   `json:"is_done"`
+	Task   *string `json:"task,omitempty"`
+	IsDone *bool   `json:"is_done,omitempty"`
 }
 
 type UpdateTaskRequest struct {

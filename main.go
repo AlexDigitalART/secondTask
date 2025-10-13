@@ -4,6 +4,7 @@ import (
 	"firstTask/internal/db"
 	"firstTask/internal/handlers"
 	"firstTask/internal/taskService"
+	"firstTask/internal/web/tasks"
 	"log"
 
 	"github.com/labstack/echo/v4"
@@ -11,24 +12,25 @@ import (
 )
 
 func main() {
-	database, err := db.InitDB()
-	if err != nil {
-		log.Fatalf("Could not connect to DB: %v", err)
-	}
+	db.InitDB()
 
+	repo := taskService.NewTaskRepository(db.DB)
+	service := taskService.NewTaskService(repo)
+
+	handler := handlers.NewTaskHandler(service)
+
+	// Инициализируем echo
 	e := echo.New()
 
-	taskRepo := taskService.NewTaskRepository(database)
-	taskServices := taskService.NewTaskService(taskRepo)
-	taskHandlers := handlers.NewTaskHandler(taskServices)
-
-	e.Use(middleware.CORS())
+	// используем Logger и Recover
 	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-	e.GET("/tasks", taskHandlers.GetTask)
-	e.POST("/tasks", taskHandlers.PostTask)
-	e.PATCH("/tasks/:id", taskHandlers.UpdateTask)
-	e.DELETE("/tasks/:id", taskHandlers.DeleteTask)
+	// Прикол для работы в echo. Передаем и регистрируем хендлер в echo
+	strictHandler := tasks.NewStrictHandler(handler, nil) // тут будет ошибка
+	tasks.RegisterHandlers(e, strictHandler)
 
-	e.Start("127.0.0.1:8080")
+	if err := e.Start(":8080"); err != nil {
+		log.Fatalf("failed to start with err: %v", err)
+	}
 }

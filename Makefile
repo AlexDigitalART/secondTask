@@ -4,6 +4,9 @@
 DB_DSN := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 MIGRATE := migrate -path ./migrations -database $(DB_DSN)
 
+gen:
+	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
+
 # Создать новую миграцию
 migrate-new:
 	migrate create -ext sql -dir ./migrations $(NAME)
