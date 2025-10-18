@@ -12,7 +12,11 @@ import (
 )
 
 func main() {
-	db.InitDB()
+	dbConn, err := db.InitDB()
+	if err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
+	db.DB = dbConn
 
 	repo := taskService.NewTaskRepository(db.DB)
 	service := taskService.NewTaskService(repo)
