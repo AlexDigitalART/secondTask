@@ -6,6 +6,7 @@ MIGRATE := migrate -path ./migrations -database $(DB_DSN)
 
 gen:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
+	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go
 
 lint:
 	golangci-lint run --color=auto
@@ -21,6 +22,9 @@ migrate-up:
 # Откатить миграции (удалить таблицы)
 migrate-down:
 	$(MIGRATE) down
+
+create-migration-users:
+	migrate create -ext sql -digits 6 -dir ./migrations -seq create_users_table
 
 # Запустить приложение
 run:
