@@ -1,13 +1,17 @@
 package taskService
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type TaskRepository interface {
-	CreateTask(task Task) error
+	CreateTask(task *Task) error
 	GetAllTask() ([]Task, error)
-	GetTaskByID(id string) (Task, error)
-	UpdateTaskBy(task Task) error
-	DeleteTask(id string) error
+	GetTaskByID(id uuid.UUID) (Task, error)
+	UpdateTaskBy(task *Task) error
+	DeleteTask(id uuid.UUID) error
+	GetTasksByUserID(userID uuid.UUID) ([]Task, error)
 }
 
 type taskRepository struct {
@@ -18,26 +22,35 @@ func NewTaskRepository(db *gorm.DB) *taskRepository {
 	return &taskRepository{db: db}
 }
 
-func (t *taskRepository) CreateTask(task Task) error {
-	return t.db.Create(&task).Error
+func (r *taskRepository) CreateTask(task *Task) error {
+	return r.db.Create(task).Error
 }
 
-func (t *taskRepository) GetAllTask() ([]Task, error) {
+func (r *taskRepository) GetTasksByUserID(userID uuid.UUID) ([]Task, error) {
 	var tasks []Task
-	err := t.db.Find(&tasks).Error
+	result := r.db.Where("user_id = ?", userID).Find(&tasks)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return tasks, nil
+}
+
+func (r *taskRepository) GetAllTask() ([]Task, error) {
+	var tasks []Task
+	err := r.db.Find(&tasks).Error
 	return tasks, err
 }
 
-func (t *taskRepository) GetTaskByID(id string) (Task, error) {
+func (r *taskRepository) GetTaskByID(id uuid.UUID) (Task, error) {
 	var task Task
-	err := t.db.First(&task, "id = ?", id).Error
+	err := r.db.First(&task, "id = ?", id).Error
 	return task, err
 }
 
-func (t *taskRepository) UpdateTaskBy(task Task) error {
-	return t.db.Save(&task).Error
+func (r *taskRepository) UpdateTaskBy(task *Task) error {
+	return r.db.Save(task).Error
 }
 
-func (t *taskRepository) DeleteTask(id string) error {
-	return t.db.Delete(&Task{}, "id = ?", id).Error
+func (r *taskRepository) DeleteTask(id uuid.UUID) error {
+	return r.db.Delete(&Task{}, "id = ?", id).Error
 }

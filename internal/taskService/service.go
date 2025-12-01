@@ -1,59 +1,65 @@
 package taskService
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 )
 
+type CreateTaskRequest struct {
+	Task   string
+	IsDone bool
+	UserID uuid.UUID
+}
+
 type TasksService interface {
-	CreateTask(text string) (Task, error)
+	CreateTask(req CreateTaskRequest) (*Task, error)
 	GetAllTask() ([]Task, error)
-	GetTaskByID(id string) (Task, error)
-	UpdateTask(id string, req UpdateTaskRequest) (Task, error)
-	DeleteTask(id string) error
+	GetTaskByID(id uuid.UUID) (Task, error)
+	UpdateTask(id uuid.UUID, req UpdateTaskRequest) (Task, error)
+	DeleteTask(id uuid.UUID) error
+	GetTasksByUserID(userID uuid.UUID) ([]Task, error)
 }
 
 type taskService struct {
 	repo TaskRepository
 }
 
-func NewTaskService(r TaskRepository) TasksService { // Возвращаем интерфейс
-	return &taskService{repo: r} // Возвращаем указатель
+func NewTaskService(r TaskRepository) TasksService {
+	return &taskService{repo: r}
 }
 
-func (s *taskService) CreateTask(text string) (Task, error) {
+func (s *taskService) CreateTask(req CreateTaskRequest) (*Task, error) {
+	if req.UserID == uuid.Nil {
+		return nil, errors.New("user_id is required")
+	}
 
-	task := Task{
-		ID:     uuid.NewString(),
-		Task:   text,
-		IsDone: false,
+	task := &Task{
+		ID:     uuid.New(),
+		Task:   req.Task,
+		IsDone: req.IsDone,
+		UserID: req.UserID,
 	}
 
 	if err := s.repo.CreateTask(task); err != nil {
-		return Task{}, err
+		return nil, err
 	}
-
 	return task, nil
+}
+
+func (s *taskService) GetTasksByUserID(userID uuid.UUID) ([]Task, error) {
+	return s.repo.GetTasksByUserID(userID)
 }
 
 func (s *taskService) GetAllTask() ([]Task, error) {
-	var task []Task
-	var err error
-	if task, err = s.repo.GetAllTask(); err != nil {
-		return []Task{}, err
-	}
-	return task, nil
+	return s.repo.GetAllTask()
 }
 
-func (s *taskService) GetTaskByID(id string) (Task, error) {
-	var task Task
-	var err error
-	if task, err = s.repo.GetTaskByID(id); err != nil {
-		return Task{}, err
-	}
-	return task, nil
+func (s *taskService) GetTaskByID(id uuid.UUID) (Task, error) {
+	return s.repo.GetTaskByID(id)
 }
 
-func (s *taskService) UpdateTask(id string, req UpdateTaskRequest) (Task, error) {
+func (s *taskService) UpdateTask(id uuid.UUID, req UpdateTaskRequest) (Task, error) {
 	task, err := s.repo.GetTaskByID(id)
 	if err != nil {
 		return Task{}, err
@@ -66,13 +72,12 @@ func (s *taskService) UpdateTask(id string, req UpdateTaskRequest) (Task, error)
 		task.IsDone = *req.IsDone
 	}
 
-	if err := s.repo.UpdateTaskBy(task); err != nil {
+	if err := s.repo.UpdateTaskBy(&task); err != nil {
 		return Task{}, err
 	}
-
 	return task, nil
 }
 
-func (s *taskService) DeleteTask(id string) error {
+func (s *taskService) DeleteTask(id uuid.UUID) error {
 	return s.repo.DeleteTask(id)
 }

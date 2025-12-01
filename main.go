@@ -22,10 +22,11 @@ func main() {
 
 	tasksRepo := taskService.NewTaskRepository(db.DB)
 	tasksService := taskService.NewTaskService(tasksRepo)
-	tasksHandler := handlers.NewTaskHandler(tasksService)
 
 	usersRepo := userService.NewUserRepository(db.DB)
-	usersService := userService.NewUserService(usersRepo)
+	usersService := userService.NewUserService(usersRepo, tasksService)
+
+	tasksHandler := handlers.NewTaskHandler(tasksService)
 	usersHandler := handlers.NewUserHandler(usersService)
 
 	// Инициализируем echo
@@ -35,9 +36,8 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// Прикол для работы в echo. Передаем и регистрируем хендлер в echo
-	strictHandler := tasks.NewStrictHandler(tasksHandler, nil) // тут будет ошибка
-	tasks.RegisterHandlers(e, strictHandler)
+	tasksStrictHandler := tasks.NewStrictHandler(tasksHandler, nil)
+	tasks.RegisterHandlers(e, tasksStrictHandler)
 
 	usersStrictHandler := users.NewStrictHandler(usersHandler, nil)
 	users.RegisterHandlers(e, usersStrictHandler)

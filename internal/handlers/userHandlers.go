@@ -5,6 +5,9 @@ import (
 	"errors"
 	"firstTask/internal/userService"
 	"firstTask/internal/web/users"
+
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/runtime/types"
 )
 
 type UserHandler struct {
@@ -15,31 +18,65 @@ func NewUserHandler(service userService.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) GetUsers(ctx context.Context, request users.GetUsersRequestObject) (users.GetUsersResponseObject, error) {
+func (h *UserHandler) GetUsers(
+	ctx context.Context,
+	request users.GetUsersRequestObject,
+) (users.GetUsersResponseObject, error) {
+
 	usersFromDB, err := h.service.GetAllUsers()
 	if err != nil {
 		return nil, err
 	}
 
 	response := users.GetUsers200JSONResponse{}
+
 	for _, user := range usersFromDB {
+
 		userResp := users.User{
-			Id:        &user.ID,
-			Email:     &user.Email,
-			Password:  &user.Password,
-			CreatedAt: &user.CreatedAt,
-			UpdatedAt: &user.UpdatedAt,
+			Id:       &user.ID,
+			Email:    &user.Email,
+			Password: &user.Password,
 		}
-		if user.DeletedAt != nil {
-			userResp.DeletedAt = user.DeletedAt
-		}
+
 		response = append(response, userResp)
 	}
 
 	return response, nil
 }
 
-func (h *UserHandler) PostUsers(ctx context.Context, request users.PostUsersRequestObject) (users.PostUsersResponseObject, error) {
+func (h *UserHandler) GetUsersIdTasks(
+	ctx context.Context,
+	request users.GetUsersIdTasksRequestObject,
+) (users.GetUsersIdTasksResponseObject, error) {
+
+	userUUID := uuid.UUID(request.Id)
+
+	tasksList, err := h.service.GetTasksForUser(userUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := users.GetUsersIdTasks200JSONResponse{}
+
+	for _, t := range tasksList {
+		item := users.Task{
+			Id:     &t.ID,
+			Task:   &t.Task,
+			IsDone: &t.IsDone,
+			UserId: &t.UserID,
+		}
+
+		response = append(response, item)
+	}
+
+	return response, nil
+}
+
+func (h *UserHandler) PostUsers(
+	ctx context.Context,
+	request users.PostUsersRequestObject,
+) (users.PostUsersResponseObject, error) {
+
 	if request.Body == nil {
 		return nil, errors.New("request body is empty")
 	}
@@ -61,54 +98,56 @@ func (h *UserHandler) PostUsers(ctx context.Context, request users.PostUsersRequ
 		return nil, err
 	}
 
-	response := users.PostUsers201JSONResponse{
-		Id:        &createdUser.ID,
-		Email:     &createdUser.Email,
-		Password:  &createdUser.Password,
-		CreatedAt: &createdUser.CreatedAt,
-		UpdatedAt: &createdUser.UpdatedAt,
-	}
-	if createdUser.DeletedAt != nil {
-		response.DeletedAt = createdUser.DeletedAt
+	resp := users.PostUsers201JSONResponse{
+		Id:       &createdUser.ID,
+		Email:    &createdUser.Email,
+		Password: &createdUser.Password,
 	}
 
-	return response, nil
+	return resp, nil
 }
 
-func (h *UserHandler) PatchUsersId(ctx context.Context, request users.PatchUsersIdRequestObject) (users.PatchUsersIdResponseObject, error) {
+func (h *UserHandler) PatchUsersId(
+	ctx context.Context,
+	request users.PatchUsersIdRequestObject,
+) (users.PatchUsersIdResponseObject, error) {
+
 	if request.Body == nil {
 		return nil, errors.New("request body is empty")
 	}
 
-	updateRequest := userService.UpdateUserRequest{}
+	updateReq := userService.UpdateUserRequest{}
 
 	if request.Body.Email != nil {
-		updateRequest.Email = request.Body.Email
+		updateReq.Email = request.Body.Email
 	}
 	if request.Body.Password != nil {
-		updateRequest.Password = request.Body.Password
+		updateReq.Password = request.Body.Password
 	}
 
-	updatedUser, err := h.service.UpdateUser(request.Id, updateRequest)
+	userUUID := uuid.UUID(request.Id)
+
+	updatedUser, err := h.service.UpdateUser(userUUID, updateReq)
 	if err != nil {
 		return nil, err
 	}
 
-	response := users.PatchUsersId200JSONResponse{
-		Id:        &updatedUser.ID,
-		Email:     &updatedUser.Email,
-		Password:  &updatedUser.Password,
-		CreatedAt: &updatedUser.CreatedAt,
-		UpdatedAt: &updatedUser.UpdatedAt,
-	}
-	if updatedUser.DeletedAt != nil {
-		response.DeletedAt = updatedUser.DeletedAt
+	userID := types.UUID(updatedUser.ID)
+
+	resp := users.PatchUsersId200JSONResponse{
+		Id:       &userID,
+		Email:    &updatedUser.Email,
+		Password: &updatedUser.Password,
 	}
 
-	return response, nil
+	return resp, nil
 }
 
-func (h *UserHandler) DeleteUsersId(ctx context.Context, request users.DeleteUsersIdRequestObject) (users.DeleteUsersIdResponseObject, error) {
+func (h *UserHandler) DeleteUsersId(
+	ctx context.Context,
+	request users.DeleteUsersIdRequestObject,
+) (users.DeleteUsersIdResponseObject, error) {
+
 	err := h.service.DeleteUser(request.Id)
 	if err != nil {
 		return nil, err

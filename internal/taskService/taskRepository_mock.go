@@ -1,15 +1,26 @@
 package taskService
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
+)
 
-// MockTaskRepository - поддельный репозиторий
 type MockTaskRepository struct {
 	mock.Mock
 }
 
-func (m *MockTaskRepository) CreateTask(task Task) error {
+func (m *MockTaskRepository) CreateTask(task *Task) error {
 	args := m.Called(task)
 	return args.Error(0)
+}
+
+func (m *MockTaskRepository) GetTasksByUserID(userID uuid.UUID) ([]Task, error) {
+	args := m.Called(userID)
+	var tasks []Task
+	if res := args.Get(0); res != nil {
+		tasks = res.([]Task)
+	}
+	return tasks, args.Error(1)
 }
 
 func (m *MockTaskRepository) GetAllTask() ([]Task, error) {
@@ -21,21 +32,21 @@ func (m *MockTaskRepository) GetAllTask() ([]Task, error) {
 	return tasks, args.Error(1)
 }
 
-func (m *MockTaskRepository) GetTaskByID(id string) (Task, error) {
+func (m *MockTaskRepository) GetTaskByID(id uuid.UUID) (Task, error) {
 	args := m.Called(id)
-	var t Task
+	var task Task
 	if res := args.Get(0); res != nil {
-		t = res.(Task)
+		task = res.(Task)
 	}
-	return t, args.Error(1)
+	return task, args.Error(1)
 }
 
-func (m *MockTaskRepository) UpdateTaskBy(task Task) error {
+func (m *MockTaskRepository) UpdateTaskBy(task *Task) error {
 	args := m.Called(task)
 	return args.Error(0)
 }
 
-func (m *MockTaskRepository) DeleteTask(id string) error {
+func (m *MockTaskRepository) DeleteTask(id uuid.UUID) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

@@ -15,18 +15,32 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// CreateTaskRequest defines model for CreateTaskRequest.
+type CreateTaskRequest struct {
+	IsDone *bool              `json:"is_done,omitempty"`
+	Task   string             `json:"task"`
+	UserId openapi_types.UUID `json:"user_id"`
+}
+
 // Task defines model for Task.
 type Task struct {
 	Id     *openapi_types.UUID `json:"id,omitempty"`
 	IsDone *bool               `json:"is_done,omitempty"`
 	Task   *string             `json:"task,omitempty"`
+	UserId *openapi_types.UUID `json:"user_id,omitempty"`
+}
+
+// UpdateTaskRequest defines model for UpdateTaskRequest.
+type UpdateTaskRequest struct {
+	IsDone *bool   `json:"is_done,omitempty"`
+	Task   *string `json:"task,omitempty"`
 }
 
 // PostTasksJSONRequestBody defines body for PostTasks for application/json ContentType.
-type PostTasksJSONRequestBody = Task
+type PostTasksJSONRequestBody = CreateTaskRequest
 
 // PatchTasksIdJSONRequestBody defines body for PatchTasksId for application/json ContentType.
-type PatchTasksIdJSONRequestBody = Task
+type PatchTasksIdJSONRequestBody = UpdateTaskRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

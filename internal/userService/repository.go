@@ -1,13 +1,16 @@
 package userService
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type UserRepository interface {
 	CreateUser(user *User) (*User, error)
 	GetAllUsers() ([]User, error)
-	GetUserByID(id int) (*User, error)
+	GetUserByID(id uuid.UUID) (*User, error)
 	UpdateUser(user *User) (*User, error)
-	DeleteUser(id int) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userRepository struct {
@@ -35,9 +38,9 @@ func (r *userRepository) GetAllUsers() ([]User, error) {
 	return users, nil
 }
 
-func (r *userRepository) GetUserByID(id int) (*User, error) {
+func (r *userRepository) GetUserByID(id uuid.UUID) (*User, error) {
 	var user User
-	result := r.db.First(&user, id)
+	result := r.db.First(&user, "id = ?", id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -52,7 +55,7 @@ func (r *userRepository) UpdateUser(user *User) (*User, error) {
 	return user, nil
 }
 
-func (r *userRepository) DeleteUser(id int) error {
-	result := r.db.Delete(&User{}, id)
+func (r *userRepository) DeleteUser(id uuid.UUID) error {
+	result := r.db.Delete(&User{}, "id = ?", id)
 	return result.Error
 }
